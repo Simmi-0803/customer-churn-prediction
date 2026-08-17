@@ -1,5 +1,7 @@
 # Customer Churn Prediction
 
+**[Live demo](https://customer-churn-prediction-9jh6pnrqsa8op8zyrpx6mc.streamlit.app)** — enter customer attributes and get a churn probability with risk band and top contributing features.
+
 Predicting telecom customer churn using machine learning, with SQL-based analysis and a Power BI dashboard for business stakeholders.
 
 ## Problem
@@ -59,6 +61,10 @@ One divergence: electronic check payment ranks 2nd among churn drivers in Logist
 
 Customers are segmented into Low (<0.3), Medium (0.3–0.6), and High (>0.6) risk bands, with a ranked table of high-risk customers for retention teams to action. 488 customers are flagged High against 374 actual churners in the test set — the model over-flags by design, consistent with the recall-first threshold choice above.
 
+## Live Application
+
+The Streamlit app loads the serialised model rather than retraining on each request, rebuilds the 30-column encoded feature vector from raw user inputs, and returns a churn probability, risk band, and per-feature contributions (coefficient x feature value). Note that contributions are unscaled — `MonthlyCharges` shows a large magnitude partly because its raw value is around 65 while one-hot features are 0 or 1.
+
 ## Project Structure
 
 ```
@@ -73,6 +79,10 @@ churn_prediction/
 │   └── 2_modeling.ipynb
 ├── sql/
 │   └── exploratory_queries.sql
+├── app.py
+├── model.pkl
+├── columns.pkl
+├── requirements.txt
 ├── churn_dashboard.pbix
 ├── .gitignore
 └── README.md
@@ -80,4 +90,4 @@ churn_prediction/
 
 ## Tools
 
-Python (pandas, scikit-learn, xgboost, seaborn, matplotlib) · MySQL · Power BI
+Python (pandas, scikit-learn, xgboost, seaborn, matplotlib) · MySQL · Power BI · Streamlit
