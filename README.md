@@ -27,25 +27,31 @@ Findings were validated two ways — visual EDA in Python and independent SQL ag
 
 ## Modelling
 
-Three models were compared on the churn class specifically, since overall accuracy is misleading on imbalanced data.
+Four models were compared on the churn class specifically, since overall accuracy is misleading on imbalanced data. Ordered by recall.
 
 | Model | Precision | Recall | F1 | Accuracy |
 |---|---|---|---|---|
-| Logistic Regression (baseline) | 0.65 | 0.56 | 0.60 | 80% |
 | **Logistic Regression (balanced)** | 0.50 | **0.79** | 0.62 | 74% |
+| XGBoost (scale_pos_weight=2.8) | 0.52 | 0.64 | 0.58 | 75% |
+| Logistic Regression (baseline) | 0.65 | 0.56 | 0.60 | 80% |
 | Random Forest (balanced) | 0.64 | 0.49 | 0.55 | 79% |
 
-**Selected model:** balanced Logistic Regression. Despite lower headline accuracy, it catches 79% of actual churners versus 56% for the baseline. In a churn context, a missed churner costs a lost customer while a false alarm costs a retention offer — so recall is prioritised.
+**Selected model:** balanced Logistic Regression. Despite lower headline accuracy, it catches 79% of actual churners versus 64% for XGBoost and 49% for Random Forest. In a churn context, a missed churner costs a lost customer while a false alarm costs a retention offer — so recall is prioritised. At 0.79 recall the model misses 79 of 374 churners; XGBoost misses 133.
 
-**Notable result:** Random Forest underperformed on recall despite being the more complex model. Its majority-voting mechanism dampens the effect of class weighting, pulling predictions back toward the majority class.
+**Notable result:** both tree ensembles underperformed the linear model on recall despite explicit imbalance handling, and they underperform in a consistent order. Logistic Regression fits a single decision boundary, so class weighting shifts it directly and fully. Random Forest applies the weight inside each of 100 trees but resolves by majority vote, which pulls predictions back toward the majority class. XGBoost sits between the two — sequential boosting propagates the weight more effectively than independent voting, but less directly than a single boundary. The recall ordering follows the mechanism: single boundary (0.79), sequential ensemble (0.64), voting ensemble (0.49). More model complexity did not translate into better minority-class detection here.
 
 ## Feature Importance
 
 Strongest retention driver: two-year contracts (coefficient -1.42), nearly 3x the magnitude of the top churn driver.
-
 Strongest churn drivers: fiber optic internet (+0.46) and electronic check payment (+0.41).
 
 Electronic check as a churn signal did not surface during visual EDA — the model identified it independently.
+
+**Cross-model agreement.** XGBoost's feature importances independently rank the same top two: Contract_Two year (0.338) and InternetService_Fiber optic (0.187), with Contract_One year third (0.143). Two unrelated algorithm families converging on the same dominant signals is stronger evidence than either alone.
+
+The two measures are not directly comparable, however. Logistic Regression coefficients are signed and indicate direction; XGBoost importances are unsigned and only indicate how heavily a feature was used for splitting. Contract_Two year ranking first in XGBoost says the model relied on it, not that it reduces churn — that direction is known only from the linear model.
+
+One divergence: electronic check payment ranks 2nd among churn drivers in Logistic Regression but 8th in XGBoost (0.016). Tree models can distribute a signal across correlated features — payment method correlates with contract type and tenure — while a linear additive model assigns it directly.
 
 ## Dashboard
 
@@ -58,15 +64,15 @@ Customers are segmented into Low (<0.3), Medium (0.3–0.6), and High (>0.6) ris
 ```
 churn_prediction/
 ├── data/
-│ ├── WA_Fn-UseC_-Telco-Customer-Churn.csv
-│ └── churn_predictions.csv
+│   ├── WA_Fn-UseC_-Telco-Customer-Churn.csv
+│   └── churn_predictions.csv
 ├── images/
-│ └── dashboard.png
+│   └── dashboard.png
 ├── notebooks/
-│ ├── 1_eda.ipynb
-│ └── 2_modeling.ipynb
+│   ├── 1_eda.ipynb
+│   └── 2_modeling.ipynb
 ├── sql/
-│ └── exploratory_queries.sql
+│   └── exploratory_queries.sql
 ├── churn_dashboard.pbix
 ├── .gitignore
 └── README.md
@@ -74,4 +80,4 @@ churn_prediction/
 
 ## Tools
 
-Python (pandas, scikit-learn, seaborn, matplotlib) · MySQL · Power BI
+Python (pandas, scikit-learn, xgboost, seaborn, matplotlib) · MySQL · Power BI
